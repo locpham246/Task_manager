@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
 import UserActivityTable from '../components/UserActivityTable';
-import axios from 'axios';
+import api from '../services/api';
+import { getStatus } from '../utils/statusHelper'; 
 
 const SuperAdminPanel = () => {
   const [activities, setActivities] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await axios.get('/api/admin/activities');
-      setActivities(res.data);
+      try {
+        const res = await api.get('/admin/activities');
+        setActivities(res.data);
+      } catch (err) {
+        console.error("Lỗi lấy dữ liệu:", err);
+      }
     };
     fetchData();
     const interval = setInterval(fetchData, 30000); 
@@ -19,7 +24,7 @@ const SuperAdminPanel = () => {
     <div>
       <h2>Bảng điều khiển Super Admin</h2>
       <div className="stats">
-        <p>Tổng số người đang Online: {activities.filter(a => getStatus(a.last_active_at) === 'Online').length}</p>
+        <p>Online: {activities.filter(a => getStatus(a.last_active_at) === 'Online').length}</p>
       </div>
       <UserActivityTable users={activities} />
     </div>

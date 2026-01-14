@@ -7,10 +7,11 @@ const User = {
       VALUES ($1, $2, $3, CURRENT_TIMESTAMP, true)
       ON CONFLICT (email) 
       DO UPDATE SET 
+        full_name = EXCLUDED.full_name,
+        avatar = EXCLUDED.avatar,
         last_active_at = CURRENT_TIMESTAMP, 
         is_online = true 
-      RETURNING *;
-    `;
+      RETURNING *;`;
     const values = [email, name, picture];
     const res = await pool.query(query, values);
     return res.rows[0];

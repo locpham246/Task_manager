@@ -19,7 +19,7 @@ const UserActivityTable = ({ users }) => (
           <td>{new Date(u.login_at).toLocaleString()}</td>
           <td>{new Date(u.last_active_at).toLocaleTimeString()}</td>
           <td style={{ color: getStatus(u.last_active_at) === 'Online' ? 'green' : 'gray' }}>
-            ● {getStatus(u.last_active_at)}
+             {getStatus(u.last_active_at)}
           </td>
         </tr>
       ))}
