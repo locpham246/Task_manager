@@ -1,0 +1,47 @@
+/* src/styles/TodoList.css */
+:root {
+  --dt-green: rgb(92, 193, 96);
+  --dt-green-dark: rgb(70, 160, 74);
+  --dt-bg-light: #f4f7fe;
+  --text-main: #2b3674;
+}
+
+/* Khung bọc ngoài cùng của nội dung */
+.todo-list-wrapper {
+    padding: 20px;
+    background: var(--dt-bg-light);
+    min-height: 100vh;
+}
+
+/* Thẻ Card trắng chứa bảng */
+.content-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.dt-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 12px;
+}
+
+.dt-table tbody tr {
+    background: #ffffff;
+    box-shadow: 0px 2px 4px rgba(0,0,0,0.02);
+    border: 1px solid #f0f0f0; /* Tạo viền nhẹ cho từng dòng */
+}
+
+.dt-table tbody tr:hover {
+    background: #f9fff9; /* Highlight xanh lá cực nhẹ */
+    transform: translateY(-2px);
+}
+
+/* Nút bấm chuẩn Đức Trí */
+.add-task-btn {
+    background: var(--dt-green) !important;
+    border-radius: 8px !important;
+    padding: 10px 24px !important;
+    font-weight: bold;
+}
