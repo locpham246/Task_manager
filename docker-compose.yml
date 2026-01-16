@@ -1,10 +1,8 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: ductri-postgres
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
@@ -21,19 +19,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    restart: unless-stopped
     deploy:
       replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
 
-  # Backend API (Node.js/Express)
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: ductri-backend
+    image: node:20-alpine 
     environment:
       NODE_ENV: production
       PORT: 5000
@@ -44,53 +34,27 @@ services:
       DB_NAME: ${DB_NAME:-task_manager}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_PORT: 5432
-      # Email settings (optional)
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-}
     ports:
       - "5000:5000"
     networks:
       - ductri-network
     depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/auth/test', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    restart: unless-stopped
+      - postgres
     deploy:
       replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
 
-  # Frontend (React/Vite - Built and served with Nginx)
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: ductri-frontend
+    image: nginx:alpine 
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+      VITE_API_URL: ${VITE_API_URL:-http://192.168.40.132:5000} 
     ports:
       - "80:80"
-      - "443:443"
     networks:
       - ductri-network
     depends_on:
       - backend
-    restart: unless-stopped
     deploy:
       replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
 
 networks:
   ductri-network:
@@ -99,4 +63,3 @@ networks:
 
 volumes:
   postgres_data:
-    driver: local
