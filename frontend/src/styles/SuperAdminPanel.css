@@ -1,0 +1,307 @@
+/* Super Admin Panel Styles */
+.super-admin-panel {
+  padding: 0;
+}
+
+/* Panel Header */
+.panel-header {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e4e6eb;
+}
+
+.panel-header h2 {
+  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1c1e21;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.panel-header h2 i {
+  color: #28a745;
+  font-size: 30px;
+}
+
+.panel-header .stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.panel-header .stat-card {
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.25);
+  border: none;
+  min-width: 180px;
+  transition: all 0.2s ease;
+}
+
+.panel-header .stat-card:hover {
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.35);
+}
+
+.panel-header .stat-card .stat-label {
+  display: block;
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.panel-header .stat-card .stat-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  background: white;
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e4e6eb;
+}
+
+.tabs button {
+  flex: 1;
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  color: #65676b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tabs button i {
+  font-size: 16px;
+}
+
+
+.tabs button.active {
+  background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+  color: white;
+  box-shadow: 0 2px 6px rgba(40, 167, 69, 0.25);
+}
+
+.tabs button:hover:not(.active) {
+  background: #f0f2f5;
+  color: #1c1e21;
+}
+
+/* Tab Content */
+.tab-content {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e4e6eb;
+}
+
+/* Role Badge in Table */
+.role-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.role-badge.super_admin {
+  background: #28a74520;
+  color: #28a745;
+  border: 1px solid #28a74540;
+}
+
+.role-badge.admin {
+  background: #007bff20;
+  color: #007bff;
+  border: 1px solid #007bff40;
+}
+
+.role-badge.member {
+  background: #28a74520;
+  color: #28a745;
+  border: 1px solid #28a74540;
+}
+
+/* Status Indicators */
+.status-online {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #28a74520;
+  color: #28a745;
+  border: 1px solid #28a74540;
+}
+
+.status-offline {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #6c757d20;
+  color: #6c757d;
+  border: 1px solid #6c757d40;
+}
+
+/* Action Button in Table */
+.action-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.action-btn.edit {
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #90caf9;
+}
+
+.action-btn.edit:hover {
+  background: #1976d2;
+  color: white;
+  box-shadow: 0 1px 3px rgba(25, 118, 210, 0.2);
+}
+
+/* Action Button Text (for SuperAdmin actions) */
+.action-btn-text {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.action-btn-text.edit {
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #90caf9;
+}
+
+.action-btn-text.edit:hover {
+  background: #1976d2;
+  color: white;
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+.action-btn-text.delete {
+  background: #ffebee;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+.action-btn-text.delete:hover {
+  background: #c62828;
+  color: white;
+  box-shadow: 0 2px 4px rgba(198, 40, 40, 0.3);
+}
+
+/* Empty State */
+.empty-state-cell {
+  text-align: center;
+  padding: 60px 20px !important;
+}
+
+.empty-state-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #8b8d92;
+}
+
+.empty-state-message i {
+  font-size: 48px;
+  opacity: 0.5;
+  color: #b2bec3;
+}
+
+.empty-state-message p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #65676b;
+}
+
+/* IP & Device Display */
+.ip-device-cell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+}
+
+.ip-display {
+  color: #0066cc;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ip-display:hover {
+  color: #0052a3;
+}
+
+.device-info {
+  color: #65676b;
+  font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .super-admin-panel {
+    padding: 16px;
+  }
+
+  .panel-header {
+    padding: 20px;
+  }
+
+  .panel-header .stats {
+    flex-direction: column;
+  }
+
+  .tabs {
+    flex-direction: column;
+  }
+
+  .tabs button {
+    width: 100%;
+  }
+}

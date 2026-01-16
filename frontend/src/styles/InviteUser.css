@@ -1,0 +1,131 @@
+.invite-user-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e4e6eb;
+    margin-bottom: 30px;
+}
+
+.invite-header {
+    text-align: left;
+}
+
+.invite-header h3 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1c1e21;
+    display: flex;
+    padding-right: 0px;
+}
+
+.invite-header h3 i {
+    color: #007bff;
+}
+
+.invite-header p {
+    margin: 0 0 20px 0;
+    color: #65676b;
+    font-size: 14px;
+}
+
+.invite-form {
+    margin-bottom: 15px;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8b8d92;
+}
+
+.input-with-icon input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 1px solid #e4e6eb;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.input-with-icon input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.invite-message {
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.invite-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.invite-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.invite-btn {
+    width: 100%;
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.invite-btn:hover:not(:disabled) {
+    background: #0056b3;
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.25);
+}
+
+.invite-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.invite-info {
+    padding-top: 15px;
+    border-top: 1px solid #e4e6eb;
+    margin-top: 15px;
+}
+
+.invite-info p {
+    margin: 0;
+    font-size: 13px;
+    color: #65676b;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.invite-info i {
+    color: #007bff;
+    margin-top: 2px;
+}
