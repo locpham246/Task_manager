@@ -10,6 +10,13 @@ export default defineConfig({
   server: {
     host: true,      // or "0.0.0.0"
     port: 5173,
+    // Allow access from production domain
+    allowedHosts: [
+      'it.ductridn.com',
+      '.ductridn.com',  // Allows all subdomains
+      'localhost',
+      '127.0.0.1'
+    ],
     // Use unsafe-none for development to suppress HMR warnings
     // Backend still sets appropriate COOP headers for OAuth security
     headers: {
