@@ -761,7 +761,7 @@
         width: 100%;
     }
     
-    .add-task-btn {
+.add-task-btn {
         width: 100%;
         justify-content: center;
     }
@@ -769,5 +769,5 @@
     .table-responsive {
         padding: 16px;
         overflow-x: auto;
-    }
+}
 }
