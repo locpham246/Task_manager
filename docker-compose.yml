@@ -12,10 +12,6 @@ services:
       - "5432:5432"
     networks:
       - ductri-network
-<<<<<<< HEAD
-    deploy:
-      replicas: 1
-=======
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
@@ -25,19 +21,12 @@ services:
     restart: unless-stopped
     # Deploy section removed for local Docker Compose compatibility
     # For Docker Swarm/Portainer, use docker-compose.swarm.yml instead
->>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
 
   backend:
-<<<<<<< HEAD
-    image: node:20-alpine 
-    working_dir: /app
-    command: sh -c "npm install && npm run dev"
-=======
     build:
       context: ./backend
       dockerfile: Dockerfile
     image: ductri-backend:latest
->>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
     environment:
       NODE_ENV: production
       PORT: 5000
@@ -48,16 +37,14 @@ services:
       DB_NAME: ${DB_NAME:-task_manager}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_PORT: 5432
+      # CORS: Allow production domain (add localhost to ALLOWED_ORIGINS for local dev)
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://it.ductridn.com}
     volumes:
       - /home/adminit/task-manager/backend:/app
     ports:
       - "5000:5000"
     networks:
       - ductri-network
-<<<<<<< HEAD
-    deploy:
-      replicas: 1
-=======
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/auth/test', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
@@ -65,47 +52,24 @@ services:
       retries: 5
       start_period: 60s
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
     # Deploy section removed for local Docker Compose compatibility
-    # For Docker Swarm/Portainer, add back:
-    # deploy:
-    #   replicas: 1
-    #   restart_policy:
-    #     condition: on-failure
-    #     delay: 5s
-    #     max_attempts: 3
-    #     window: 120s
-    #   placement:
-    #     constraints:
-    #       - node.role == manager
-    #   update_config:
-    #     parallelism: 1
-    #     delay: 10s
-    #     failure_action: rollback
->>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
+    # For Docker Swarm/Portainer, use docker-compose.swarm.yml instead
 
   frontend:
-<<<<<<< HEAD
-    image: node:20-alpine
-    working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host"
-=======
     build:
       context: ./frontend
       dockerfile: Dockerfile
     image: ductri-frontend:latest
->>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
     environment:
-      VITE_API_URL: http://192.168.40.132:5000 
+      # Backend API URL - use production domain or IP
+      VITE_API_URL: ${VITE_API_URL:-http://it.ductridn.com:5000/api}
+      VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-1084886023567-rrrqtka0lt87gcuggf8147ov62qcvd6f.apps.googleusercontent.com}
     volumes:
       - /home/adminit/task-manager/frontend:/app
     ports:
-<<<<<<< HEAD
-      - "5173:5173" 
-    networks:
-      - ductri-network
-    deploy:
-      replicas: 1
-=======
       - "80:80"
     networks:
       - ductri-network
@@ -113,20 +77,7 @@ services:
       - backend
     restart: unless-stopped
     # Deploy section removed for local Docker Compose compatibility
-    # For Docker Swarm/Portainer, add back:
-    # deploy:
-    #   replicas: 1
-    #   restart_policy:
-    #     condition: on-failure
-    #     delay: 5s
-    #     max_attempts: 3
-    #   placement:
-    #     constraints:
-    #       - node.role == manager
-    #   update_config:
-    #     parallelism: 1
-    #     delay: 10s
->>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
+    # For Docker Swarm/Portainer, use docker-compose.swarm.yml instead
 
 networks:
   ductri-network:

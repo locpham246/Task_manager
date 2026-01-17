@@ -30,12 +30,8 @@ const documentRoutes = require('./routes/documentRoutes');
 
 const app = express();
 
-// CORS configuration - allow localhost on all ports and production domain
+// CORS configuration - production domain by default
 const defaultOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://localhost:80',
-  'http://localhost',
   'http://it.ductridn.com',  // Production domain
   'https://it.ductridn.com'  // HTTPS production domain
 ];
@@ -48,12 +44,12 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    // Allow localhost on any port
-    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-      return callback(null, true);
-    }
     // Allow production domain
     if (origin.startsWith('http://it.ductridn.com') || origin.startsWith('https://it.ductridn.com')) {
+      return callback(null, true);
+    }
+    // Allow localhost only in development (can be enabled via ALLOWED_ORIGINS)
+    if (process.env.NODE_ENV === 'development' && (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1'))) {
       return callback(null, true);
     }
     // Allow origins from environment variable
@@ -108,4 +104,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/documents', documentRoutes);
 
 const PORT = process.env.PORT || 5000;
+<<<<<<< HEAD
 app.listen(PORT, () => console.log(`Server chạy tại http://localhost:${PORT}`));
+=======
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+>>>>>>> e221863 (Update for production: remove localhost, add it.ductridn.com domain, update docker-compose.swarm.yml, add architecture docs)

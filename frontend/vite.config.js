@@ -13,9 +13,7 @@ export default defineConfig({
     // Allow access from production domain
     allowedHosts: [
       'it.ductridn.com',
-      '.ductridn.com',  // Allows all subdomains
-      'localhost',
-      '127.0.0.1'
+      '.ductridn.com'  // Allows all subdomains
     ],
     // Use unsafe-none for development to suppress HMR warnings
     // Backend still sets appropriate COOP headers for OAuth security

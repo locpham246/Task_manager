@@ -307,7 +307,7 @@ router.post('/invite-user', protect, isAdmin, async (req, res) => {
         let emailResult = { success: false, message: 'Email service not configured' };
         try {
             const emailService = require('../services/emailService');
-            const systemUrl = process.env.SYSTEM_URL || 'http://localhost:5173';
+            const systemUrl = process.env.SYSTEM_URL || 'http://it.ductridn.com';
             emailResult = await emailService.sendInvitationEmail(
                 normalizedEmail,
                 inviterName,

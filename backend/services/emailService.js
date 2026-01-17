@@ -42,7 +42,7 @@ const createTransporter = () => {
  * @param {string} systemUrl - URL of the application
  * @returns {Promise<Object>} Email send result
  */
-const sendInvitationEmail = async (toEmail, inviterName, systemUrl = 'http://localhost:5173') => {
+const sendInvitationEmail = async (toEmail, inviterName, systemUrl = 'http://it.ductridn.com') => {
   try {
     const transporter = createTransporter();
     
