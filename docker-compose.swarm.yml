@@ -99,6 +99,11 @@ services:
       - backend
     deploy:
       replicas: 1
+      ports:
+        - target: 80
+          published: 3000
+          protocol: tcp
+          mode: host
       restart_policy:
         condition: on-failure
         delay: 5s
