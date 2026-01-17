@@ -5,8 +5,8 @@ services:
   proxy-manager:
     image: 'jc21/nginx-proxy-manager:latest'
     ports:
-      - "80:80"   # Cổng HTTP cho Domain
-      - "443:443" # Cổng HTTPS cho Domain (OAuth cần cái này)
+      - "80:80"   # Cổng HTTP
+      - "443:443" # Cổng HTTPS (OAuth bắt buộc)
       - "81:81"   # Giao diện quản lý NPM
     volumes:
       - npm_data:/data
@@ -20,8 +20,6 @@ services:
           - node.role == manager
       restart_policy:
         condition: on-failure
-        delay: 5s
-        max_attempts: 3
 
   # PostgreSQL Database
   postgres:
@@ -40,18 +38,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
     deploy:
       replicas: 1
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
       placement:
         constraints:
           - node.role == manager
 
-  # Backend API (Node.js/Express)
+  # Backend API
   backend:
     build:
       context: ./backend
@@ -67,17 +60,11 @@ services:
       DB_PORT: 5432
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       JWT_SECRET: ${JWT_SECRET}
-      # CORS: Allow production domain
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://it.ductridn.com,https://it.ductridn.com}
-      # Email settings (optional)
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-https://it.ductridn.com}
     networks:
       - ductri-network
-    # Ports not exposed directly - accessed via Nginx Proxy Manager
+    depends_on:
+      - postgres
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/auth/test', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
@@ -88,33 +75,28 @@ services:
       replicas: 1
       restart_policy:
         condition: on-failure
-        delay: 5s
-        max_attempts: 3
-        window: 120s
+        delay: 10s
+        max_attempts: 5
       placement:
         constraints:
           - node.role == manager
       update_config:
         parallelism: 1
         delay: 10s
-        failure_action: rollback
-    depends_on:
-      postgres:
-        condition: service_healthy
 
-  # Frontend (React/Vite - Built and served with Nginx)
+  # Frontend (Vite)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     image: ductri-frontend:latest
     environment:
-      # Backend API URL - use HTTPS through Nginx Proxy Manager
       VITE_API_URL: ${VITE_API_URL:-https://it.ductridn.com/api}
       VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     networks:
       - ductri-network
-    # Ports not exposed directly - accessed via Nginx Proxy Manager
+    depends_on:
+      - backend
     deploy:
       replicas: 1
       restart_policy:
@@ -127,8 +109,6 @@ services:
       update_config:
         parallelism: 1
         delay: 10s
-    depends_on:
-      - backend
 
 networks:
   ductri-network:
