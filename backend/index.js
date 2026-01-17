@@ -104,8 +104,4 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/documents', documentRoutes);
 
 const PORT = process.env.PORT || 5000;
-<<<<<<< HEAD
-app.listen(PORT, () => console.log(`Server chạy tại http://localhost:${PORT}`));
-=======
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
->>>>>>> e221863 (Update for production: remove localhost, add it.ductridn.com domain, update docker-compose.swarm.yml, add architecture docs)
