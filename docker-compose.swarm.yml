@@ -1,6 +1,28 @@
 version: '3.8'
 
 services:
+  # Nginx Proxy Manager: Quản lý it.ductridn.com và SSL
+  proxy-manager:
+    image: 'jc21/nginx-proxy-manager:latest'
+    ports:
+      - "80:80"   # Cổng HTTP cho Domain
+      - "443:443" # Cổng HTTPS cho Domain (OAuth cần cái này)
+      - "81:81"   # Giao diện quản lý NPM
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    networks:
+      - ductri-network
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
@@ -11,8 +33,6 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     networks:
       - ductri-network
     healthcheck:
@@ -23,39 +43,47 @@ services:
       start_period: 30s
     deploy:
       replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
       placement:
         constraints:
           - node.role == manager
 
   # Backend API (Node.js/Express)
   backend:
-    image: node:20-alpine
-    working_dir: /app
-    # Swarm cần lệnh này để cài thư viện và chạy code từ volume
-    command: sh -c "npm install && npm run dev"
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ductri-backend:latest
     environment:
       NODE_ENV: production
       PORT: 5000
+      DB_HOST: postgres
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-task_manager}
+      DB_PORT: 5432
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       JWT_SECRET: ${JWT_SECRET}
-      DB_USER: ${DB_USER:-postgres}
-      DB_HOST: postgres
-      DB_NAME: ${DB_NAME:-task_manager}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_PORT: 5432
-      # CORS: Allow production domain (add localhost to ALLOWED_ORIGINS for local dev)
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://it.ductridn.com}
-    ports:
-      - "5000:5000"
+      # CORS: Allow production domain
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://it.ductridn.com,https://it.ductridn.com}
+      # Email settings (optional)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
     networks:
       - ductri-network
+    # Ports not exposed directly - accessed via Nginx Proxy Manager
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/auth/test', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 60s
-    restart: unless-stopped
     deploy:
       replicas: 1
       restart_policy:
@@ -70,6 +98,9 @@ services:
         parallelism: 1
         delay: 10s
         failure_action: rollback
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # Frontend (React/Vite - Built and served with Nginx)
   frontend:
@@ -78,16 +109,12 @@ services:
       dockerfile: Dockerfile
     image: ductri-frontend:latest
     environment:
-      # Backend API URL - use production domain or internal container name
-      VITE_API_URL: ${VITE_API_URL:-http://it.ductridn.com:5000/api}
+      # Backend API URL - use HTTPS through Nginx Proxy Manager
+      VITE_API_URL: ${VITE_API_URL:-https://it.ductridn.com/api}
       VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-    ports:
-      - "80:80"
     networks:
       - ductri-network
-    depends_on:
-      - backend
-    restart: unless-stopped
+    # Ports not exposed directly - accessed via Nginx Proxy Manager
     deploy:
       replicas: 1
       restart_policy:
@@ -100,6 +127,8 @@ services:
       update_config:
         parallelism: 1
         delay: 10s
+    depends_on:
+      - backend
 
 networks:
   ductri-network:
@@ -107,5 +136,9 @@ networks:
     attachable: true
 
 volumes:
+  npm_data:
+    driver: local
+  npm_letsencrypt:
+    driver: local
   postgres_data:
     driver: local
