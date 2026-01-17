@@ -30,10 +30,19 @@ const documentRoutes = require('./routes/documentRoutes');
 
 const app = express();
 
-// CORS configuration - allow localhost on all ports and Docker network
+// CORS configuration - allow localhost on all ports and production domain
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:80',
+  'http://localhost',
+  'http://it.ductridn.com',  // Production domain
+  'https://it.ductridn.com'  // HTTPS production domain
+];
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:80', 'http://localhost'];
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : defaultOrigins;
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -43,6 +52,10 @@ const corsOptions = {
     if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       return callback(null, true);
     }
+    // Allow production domain
+    if (origin.startsWith('http://it.ductridn.com') || origin.startsWith('https://it.ductridn.com')) {
+      return callback(null, true);
+    }
     // Allow origins from environment variable
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -50,7 +63,8 @@ const corsOptions = {
       // In development, allow all origins
       callback(null, true);
     } else {
-      callback(null, true); // Allow all in development for now
+      // In production, check if origin is in allowed list
+      callback(new Error(`CORS: Origin ${origin} is not allowed`), false);
     }
   },
   credentials: true,
