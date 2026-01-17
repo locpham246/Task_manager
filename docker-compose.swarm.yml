@@ -1,5 +1,4 @@
-# Docker Swarm version for Portainer deployment
-# Use this file in Portainer instead of docker-compose.yml
+version: '3.8'
 
 services:
   # PostgreSQL Database
@@ -22,23 +21,18 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-    restart: unless-stopped
     deploy:
       replicas: 1
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
       placement:
         constraints:
           - node.role == manager
 
   # Backend API (Node.js/Express)
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    image: ductri-backend:latest
+    image: node:20-alpine
+    working_dir: /app
+    # Swarm cần lệnh này để cài thư viện và chạy code từ volume
+    command: sh -c "npm install && npm run dev"
     environment:
       NODE_ENV: production
       PORT: 5000
@@ -49,12 +43,9 @@ services:
       DB_NAME: ${DB_NAME:-task_manager}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       DB_PORT: 5432
-      # Email settings (optional)
-      SMTP_HOST: ${SMTP_HOST:-}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER:-}
-      SMTP_PASS: ${SMTP_PASS:-}
-      SMTP_FROM: ${SMTP_FROM:-}
+    volumes:
+      # Nối trực tiếp thư mục code đã clone trên máy ảo 132
+      - /home/adminit/task-manager/backend:/app
     ports:
       - "5000:5000"
     networks:
@@ -65,49 +56,34 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
-    restart: unless-stopped
     deploy:
       replicas: 1
       restart_policy:
         condition: on-failure
         delay: 5s
-        max_attempts: 3
-        window: 120s
       placement:
         constraints:
           - node.role == manager
-      update_config:
-        parallelism: 1
-        delay: 10s
-        failure_action: rollback
 
-  # Frontend (React/Vite - Built and served with Nginx)
+  # Frontend (React/Vite)
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: ductri-frontend:latest
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+      # IP thực tế của máy ảo để máy tính của bạn truy cập được API
+      VITE_API_URL: http://192.168.40.132:5000
+    volumes:
+      - /home/adminit/task-manager/frontend:/app
     ports:
-      - "80:80"
+      - "5173:5173" # Truy cập web qua cổng 5173
     networks:
       - ductri-network
-    depends_on:
-      - backend
-    restart: unless-stopped
     deploy:
       replicas: 1
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
       placement:
         constraints:
           - node.role == manager
-      update_config:
-        parallelism: 1
-        delay: 10s
 
 networks:
   ductri-network:
