@@ -16,11 +16,11 @@ const Login = () => {
   }, [user, loading, navigate]);
 
   if (loading) return (
-    <div className="loading-container">
-      <div className="spinner"></div>
-      <p>Đang kiểm tra phiên làm việc...</p>
-    </div>
-  );
+  <div className="loading-container">
+    <div className="spinner"></div>
+    <p>Đang kiểm tra phiên làm việc...</p>
+  </div>
+);
 
   return (
     <div className="login-page">

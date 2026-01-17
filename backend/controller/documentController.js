@@ -44,8 +44,9 @@ exports.getSharedDocuments = async (req, res) => {
             values = [];
         } else {
             // Members can see documents they shared OR documents shared with them
+            // Use subquery to avoid DISTINCT with JSON aggregation issue
             query = `
-                SELECT DISTINCT
+                SELECT 
                     sd.id,
                     sd.title,
                     sd.description,

@@ -1,9 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Fix Windows permission issue by using a cache directory outside node_modules
+  cacheDir: path.resolve(__dirname, '.vite'),
   server: {
     host: true,      // or "0.0.0.0"
     port: 5173,

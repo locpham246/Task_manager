@@ -303,14 +303,19 @@ router.post('/invite-user', protect, isAdmin, async (req, res) => {
         const inviterResult = await pool.query('SELECT full_name, email FROM users WHERE id = $1', [inviterId]);
         const inviterName = inviterResult.rows[0]?.full_name || inviterResult.rows[0]?.email || 'Quản trị viên';
         
-        // Send invitation email
-        const emailService = require('../services/emailService');
-        const systemUrl = process.env.SYSTEM_URL || 'http://localhost:5173';
-        const emailResult = await emailService.sendInvitationEmail(
-            normalizedEmail,
-            inviterName,
-            systemUrl
-        );
+        // Send invitation email (optional - email service removed)
+        let emailResult = { success: false, message: 'Email service not configured' };
+        try {
+            const emailService = require('../services/emailService');
+            const systemUrl = process.env.SYSTEM_URL || 'http://localhost:5173';
+            emailResult = await emailService.sendInvitationEmail(
+                normalizedEmail,
+                inviterName,
+                systemUrl
+            );
+        } catch (err) {
+            console.warn('⚠️ Email service not available:', err.message);
+        }
 
         // Log invitation
         await pool.query(

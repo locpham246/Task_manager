@@ -1,204 +1,396 @@
-# Deployment Guide - Docker Swarm with Portainer
+# Deployment & Advanced Guide
 
-This guide will help you deploy the Đức Trí Task Manager application using Docker Swarm and Portainer.
+## 📋 Table of Contents
+1. [Docker Compose Files Explained](#docker-compose-files-explained)
+2. [Database Schema & Migrations](#database-schema--migrations)
+3. [User Roles & Permissions](#user-roles--permissions)
+4. [Document Sharing Rules](#document-sharing-rules)
+5. [Email Service Options](#email-service-options)
+6. [Environment Configuration](#environment-configuration)
 
-## Prerequisites
+---
 
-- Proxmox with Docker Swarm configured
-- Portainer installed and accessible
-- Access to your Proxmox server
+## 🐳 Docker Compose Files Explained
 
-## Step 1: Prepare Your Environment
+### Which File to Use?
 
-1. **Clone or upload your project** to your Proxmox server
-2. **Create a `.env` file** in the `personal_task` directory based on `.env.example`:
+**`docker-compose.yml` (Local Development):**
+- ✅ Use for local development with Docker Desktop
+- Network: `bridge` driver (local Docker Compose)
+- No `deploy` sections
+- Ports: Direct mapping (5000:5000, 5173:80)
 
-```bash
-cd personal_task
-cp .env.example .env
-nano .env  # Edit with your actual values
+**`docker-compose.swarm.yml` (Production/Portainer):**
+- ✅ Use for Portainer/Docker Swarm deployment
+- Network: `overlay` driver (required for Docker Swarm)
+- Has `deploy` sections for Swarm orchestration
+- Same ports but configured for Swarm networking
+
+**Key Differences:**
+
+| Feature | docker-compose.yml | docker-compose.swarm.yml |
+|---------|-------------------|-------------------------|
+| Network Driver | `bridge` | `overlay` |
+| Deploy Sections | ❌ No | ✅ Yes |
+| Replicas | N/A (single instance) | Configurable |
+| Restart Policy | `unless-stopped` | `any` (Swarm) |
+| Use Case | Local dev | Production/Swarm |
+
+---
+
+## 💾 Database Schema & Migrations
+
+### Schema Overview
+
+**Core Tables:**
+- `users` - User accounts with roles
+- `todos` - Tasks with single assignee
+- `document_shares` - Document sharing relationships
+- `shared_documents` - Document metadata
+- `email_whitelist` - Email access control
+- `audit_logs` - System activity logs
+- `task_assignees` - Multiple assignees (if enabled)
+
+**Current Status:** ✅ Complete - All features supported
+
+### Running Migrations
+
+**Initialize Database (First Time):**
+```powershell
+Get-Content backend\migrations\init_database.sql | docker-compose exec -T postgres psql -U postgres -d task_manager
 ```
 
-3. **Required Environment Variables:**
-   - `GOOGLE_CLIENT_ID`: Your Google OAuth Client ID
-   - `JWT_SECRET`: A secure random string (minimum 32 characters)
-   - `DB_PASSWORD`: A strong password for PostgreSQL
-   - `DB_NAME`: Database name (default: `task_manager`)
-   - `DB_USER`: Database user (default: `postgres`)
+**Individual Migrations:**
+```powershell
+# Email whitelist
+docker-compose exec postgres psql -U postgres -d task_manager < backend/migrations/create_email_whitelist.sql
 
-## Step 2: Deploy via Portainer
+# IP/Device tracking
+docker-compose exec postgres psql -U postgres -d task_manager < backend/migrations/add_ip_device_tracking.sql
 
-### Option A: Using Portainer Web Editor
-
-1. **Open Portainer** in your browser
-2. **Navigate to**: Stacks > Add stack
-3. **Name**: `ductri-task-manager`
-4. **Build method**: Select "Web editor"
-5. **Copy and paste** the contents of `docker-compose.yml` into the editor
-6. **Environment variables**: 
-   - Click on "Environment variables" or "Env" tab
-   - Add all variables from your `.env` file
-   - Or use Portainer's "Environment variables" section to load from file
-
-### Option B: Using Git Repository
-
-1. **Push your code** to a Git repository (GitHub, GitLab, etc.)
-2. **In Portainer**:
-   - Stacks > Add stack
-   - Name: `ductri-task-manager`
-   - Build method: Select "Repository"
-   - Repository URL: `https://github.com/yourusername/your-repo.git`
-   - Repository reference: `main` (or your branch)
-   - Compose path: `personal_task/docker-compose.yml`
-   - Environment variables: Add from `.env` file
-
-### Option C: Upload docker-compose.yml
-
-1. **In Portainer**:
-   - Stacks > Add stack
-   - Name: `ductri-task-manager`
-   - Build method: Select "Upload"
-   - Upload your `docker-compose.yml` file
-   - Add environment variables
-
-## Step 3: Configure Environment Variables in Portainer
-
-After creating the stack, you need to add environment variables:
-
-1. **Go to your stack** in Portainer
-2. **Click "Editor"** or "Environment variables"
-3. **Add the following variables** (or use the "Load variables from .env file" option):
-
+# Shared documents
+docker-compose exec postgres psql -U postgres -d task_manager < backend/migrations/add_shared_documents.sql
 ```
+
+---
+
+## 👤 User Roles & Permissions
+
+### Role Hierarchy
+
+**1. Member (member) - Default**
+- Can create and manage their own tasks
+- Can view shared documents
+- Cannot access admin features
+
+**2. Admin (admin)**
+- All member permissions
+- Can view all users and activities
+- Cannot manage user roles or whitelist
+
+**3. Super Admin (super_admin)**
+- All admin permissions
+- Can manage user roles
+- Can manage email whitelist
+- Can delete users
+- Full system access
+
+### Permission Matrix
+
+| Feature | Member | Admin | Super Admin |
+|---------|--------|-------|-------------|
+| View own tasks | ✅ | ✅ | ✅ |
+| View all tasks | ❌ | ✅ | ✅ |
+| Assign tasks to others | ❌ | ✅ | ✅ |
+| Edit any task | ❌ | ✅ | ✅ |
+| Invite users | ❌ | ❌ | ✅ |
+| Manage roles | ❌ | ❌ | ✅ |
+| Manage whitelist | ❌ | ❌ | ✅ |
+| View audit logs | ❌ | ❌ | ✅ |
+| Delete users | ❌ | ❌ | ✅ |
+
+---
+
+## 📄 Document Sharing Rules
+
+### Access Control
+
+**All Roles Can:**
+- Share documents with other users
+- View documents they have access to
+
+**Members Can:**
+- Manage only documents they created/shared
+- Update sharing settings for their own documents
+- Delete their own documents
+- ❌ Cannot delete documents shared by others (protected)
+
+**Admins & Super Admins Can:**
+- View all documents in the system
+- Full control over all documents
+- Update sharing settings for any document
+- Delete any document
+
+### Security Features
+
+**Original File Protection:**
+- Members cannot delete documents shared by others
+- Only the original creator or Admin/SuperAdmin can delete
+- Prevents accidental or malicious deletion
+
+**Audit Logging:**
+All document actions are logged:
+- `SHARE_DOCUMENT` - When a document is shared
+- `UPDATE_DOCUMENT_SHARES` - When sharing settings change
+- `DELETE_DOCUMENT` - When a document is deleted
+
+---
+
+## 📧 Email Service Options
+
+### Recommended: Gmail SMTP (FREE)
+
+**Why:**
+- ✅ 100% FREE (500 emails/day for free Gmail)
+- ✅ Easy to set up
+- ✅ You're already using Google OAuth
+- ✅ 500 emails/day = 15,000/month (more than enough!)
+
+**Setup:**
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=your-email@gmail.com
+```
+
+**Alternative Options:**
+
+| Service | Free Tier | Cost After |
+|---------|-----------|------------|
+| **Gmail SMTP** | 500/day | FREE |
+| **AWS SES** | 3,000/month (1 year) | $0.10/1,000 |
+| **MailerSend** | 3,000/month | ~$10/month |
+| **Brevo** | 300/day | ~$25/month |
+
+**Volume Estimate:**
+- Invitations: ~5-20/month
+- Password resets: ~0-5/month
+- Notifications: ~10-50/month
+- **Total: ~15-75 emails/month**
+
+**Conclusion:** Any free tier is MORE than enough! 🎉
+
+---
+
+## ⚙️ Environment Configuration
+
+### Backend Environment Variables
+
+**Required:**
+```env
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+
+# JWT Secret (minimum 32 characters)
+JWT_SECRET=your_jwt_secret_key_minimum_32_characters_long
+
+# Database
 DB_USER=postgres
-DB_PASSWORD=your_secure_password
+DB_PASSWORD=postgres
 DB_NAME=task_manager
 DB_HOST=postgres
 DB_PORT=5432
-GOOGLE_CLIENT_ID=your_google_client_id
-JWT_SECRET=your_super_secret_jwt_key_min_32_chars
-VITE_API_URL=http://your-server-ip:5000
+
+# Node Environment
+NODE_ENV=production
 ```
 
-**Important**: Replace placeholder values with your actual credentials!
+**Optional:**
+```env
+# Email Service (for notifications)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+SMTP_FROM=your-email@gmail.com
 
-## Step 4: Deploy the Stack
-
-1. **Click "Deploy the stack"** button
-2. **Wait for services to start** (this may take a few minutes on first build)
-3. **Check logs** if any service fails to start
-
-## Step 5: Initialize Database
-
-After the stack is deployed, you need to run database migrations:
-
-1. **In Portainer**, go to **Containers**
-2. **Find** `ductri-postgres` container
-3. **Click** on it, then go to **Console** tab
-4. **Connect** to the database:
-
-```bash
-psql -U postgres -d task_manager
+# System URL
+SYSTEM_URL=http://localhost:5173
 ```
 
-5. **Run the migration SQL files** from `backend/migrations/`:
-   - `create_email_whitelist.sql`
-   - `add_shared_documents.sql`
-   - `add_multiple_assignees.sql`
-   - `add_documentation_links.sql`
-   - `add_created_at_to_users.sql`
-   - `add_ip_device_tracking.sql`
+### Frontend Environment Variables
 
-6. **Add your Super Admin email** to the whitelist:
+**Required:**
+```env
+# API URL (backend)
+VITE_API_URL=http://localhost:5000
 
-```sql
-INSERT INTO email_whitelist (email, is_active) 
-VALUES ('your-email@ductridn.edu.vn', true);
+# Google OAuth Client ID (must match backend)
+VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 ```
 
-## Step 6: Access Your Application
+### Setting Environment Variables
 
-- **Frontend**: `http://your-server-ip` (port 80)
-- **Backend API**: `http://your-server-ip:5000`
-- **PostgreSQL**: `your-server-ip:5432` (if exposed)
+**Method 1: .env File (Recommended)**
+Create `.env` file in `backend/` and `frontend/` directories.
 
-## Step 7: Update Google OAuth Settings
+**Method 2: docker-compose.yml**
+Add under `environment:` section for each service.
 
-1. **Go to Google Cloud Console**
-2. **Update authorized redirect URIs**:
-   - `http://your-server-ip/api/auth/google/callback`
-   - `https://your-domain.com/api/auth/google/callback` (if using HTTPS)
+**Method 3: System Environment Variables**
+Set in your system and Docker will pick them up.
 
-## Troubleshooting
+---
 
-### Services won't start
+## 🚀 Deployment Steps
 
-1. **Check logs** in Portainer:
-   - Go to **Containers** > Select container > **Logs** tab
-2. **Common issues**:
-   - Missing environment variables
-   - Database connection errors
-   - Port conflicts
+### Local Development
 
-### Database connection errors
-
-- Verify `DB_HOST=postgres` (service name, not `localhost`)
-- Check PostgreSQL is healthy: Look for green health check in Portainer
-- Verify database credentials in `.env`
-
-### Frontend can't connect to backend
-
-- Update `VITE_API_URL` in environment variables
-- Ensure backend is running and healthy
-- Check network connectivity between services
-
-### Build fails
-
-- Check Dockerfile syntax
-- Verify all files are present
-- Check Portainer logs for build errors
-
-## Updating the Application
-
-1. **Make changes** to your code
-2. **In Portainer**:
-   - Go to your stack
-   - Click **Editor**
-   - Update the compose file if needed
-   - Click **Update the stack**
-3. **Or rebuild**:
-   - Go to **Images**
-   - Remove old images
-   - Redeploy the stack
-
-## Backup Database
-
-```bash
-# In Portainer, connect to postgres container console
-pg_dump -U postgres task_manager > backup.sql
+1. **Clone repository:**
+```powershell
+git clone <repository-url>
+cd personal_task
 ```
 
-## Scaling (Optional)
+2. **Set up environment variables:**
+- Create `backend/.env` with required variables
+- Create `frontend/.env` with VITE_ variables
 
-To scale services horizontally:
+3. **Start services:**
+```powershell
+docker-compose up -d --build
+```
 
-1. **In Portainer**, go to your stack
-2. **Edit** the stack
-3. **Update** `deploy.replicas` in docker-compose.yml
-4. **Note**: PostgreSQL should remain at 1 replica (not suitable for horizontal scaling)
+4. **Initialize database:**
+```powershell
+Get-Content backend\migrations\init_database.sql | docker-compose exec -T postgres psql -U postgres -d task_manager
+```
 
-## Security Recommendations
+5. **Set first super admin:**
+```powershell
+docker-compose exec postgres psql -U postgres -d task_manager -c "UPDATE users SET role = 'super_admin' WHERE email = 'your-email@ductridn.edu.vn';"
+```
 
-1. **Use strong passwords** for database and JWT secret
-2. **Enable HTTPS** using a reverse proxy (Traefik, Nginx Proxy Manager)
-3. **Restrict database port** (5432) to internal network only
-4. **Regular backups** of PostgreSQL data volume
-5. **Keep images updated** for security patches
+### Production Deployment (Portainer/Docker Swarm)
 
-## Support
+1. **Upload to Portainer:**
+- Stack → Add Stack
+- Upload `docker-compose.swarm.yml`
+- Configure environment variables
 
-For issues or questions, check:
-- Portainer logs
-- Container logs
-- Database connection status
-- Network connectivity
+2. **Deploy:**
+- Review configuration
+- Deploy stack
+- Monitor logs
+
+3. **Initialize database:**
+```powershell
+# Access PostgreSQL container
+docker exec -i <postgres-container-id> psql -U postgres -d task_manager < backend/migrations/init_database.sql
+```
+
+4. **Set first super admin:**
+```powershell
+docker exec <postgres-container-id> psql -U postgres -d task_manager -c "UPDATE users SET role = 'super_admin' WHERE email = 'your-email@ductridn.edu.vn';"
+```
+
+---
+
+## 🔒 Security Best Practices
+
+1. **Change default passwords:**
+   - Update `DB_PASSWORD` in production
+   - Use strong `JWT_SECRET` (minimum 32 characters)
+
+2. **Email whitelist:**
+   - Only whitelisted emails can access system
+   - Manage via Super Admin panel
+
+3. **Role management:**
+   - Only Super Admins can change roles
+   - Audit logs track all role changes
+
+4. **CORS configuration:**
+   - Configure `ALLOWED_ORIGINS` in backend
+   - Restrict to your domain in production
+
+5. **HTTPS in production:**
+   - Use reverse proxy (Nginx) with SSL
+   - Configure Let's Encrypt certificates
+
+---
+
+## 📊 Monitoring & Maintenance
+
+### Check Service Status
+```powershell
+docker-compose ps
+```
+
+### View Logs
+```powershell
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f backend
+docker-compose logs -f frontend
+docker-compose logs -f postgres
+```
+
+### Restart Services
+```powershell
+# All services
+docker-compose restart
+
+# Specific service
+docker-compose restart backend
+```
+
+### Database Backup
+```powershell
+# Backup
+docker-compose exec postgres pg_dump -U postgres task_manager > backup.sql
+
+# Restore
+docker-compose exec -T postgres psql -U postgres -d task_manager < backup.sql
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Backend keeps restarting:**
+- Check logs: `docker-compose logs backend`
+- Verify environment variables
+- Check database connection
+
+**Database connection failed:**
+- Verify PostgreSQL is running: `docker-compose ps postgres`
+- Check database credentials
+- Ensure tables exist (run init script)
+
+**403 Forbidden errors:**
+- JWT token has old role - refresh token or log out/in
+- Check user role in database
+- Verify permissions
+
+**CORS errors:**
+- Check `ALLOWED_ORIGINS` in backend
+- Verify frontend URL matches configuration
+
+---
+
+## 📝 Additional Resources
+
+- **Main README:** See `README.md` for quick start guide
+- **Migrations:** See `backend/migrations/README.md` for migration details
+- **API Documentation:** See README.md API section
+
+---
+
+For quick start instructions, see `README.md`.

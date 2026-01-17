@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -14,18 +12,37 @@ services:
       - "5432:5432"
     networks:
       - ductri-network
+<<<<<<< HEAD
     deploy:
       replicas: 1
+=======
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    # Deploy section removed for local Docker Compose compatibility
+    # For Docker Swarm/Portainer, use docker-compose.swarm.yml instead
+>>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
 
   backend:
+<<<<<<< HEAD
     image: node:20-alpine 
     working_dir: /app
     command: sh -c "npm install && npm run dev"
+=======
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: ductri-backend:latest
+>>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
     environment:
       NODE_ENV: production
       PORT: 5000
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-1084886023567-rrrqtka0lt87gcuggf8147ov62qcvd6f.apps.googleusercontent.com}
+      JWT_SECRET: ${JWT_SECRET:-test_jwt_secret_key_minimum_32_characters_long_for_local}
       DB_USER: ${DB_USER:-postgres}
       DB_HOST: postgres
       DB_NAME: ${DB_NAME:-task_manager}
@@ -37,28 +54,84 @@ services:
       - "5000:5000"
     networks:
       - ductri-network
+<<<<<<< HEAD
     deploy:
       replicas: 1
+=======
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/api/auth/test', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    # Deploy section removed for local Docker Compose compatibility
+    # For Docker Swarm/Portainer, add back:
+    # deploy:
+    #   replicas: 1
+    #   restart_policy:
+    #     condition: on-failure
+    #     delay: 5s
+    #     max_attempts: 3
+    #     window: 120s
+    #   placement:
+    #     constraints:
+    #       - node.role == manager
+    #   update_config:
+    #     parallelism: 1
+    #     delay: 10s
+    #     failure_action: rollback
+>>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
 
   frontend:
+<<<<<<< HEAD
     image: node:20-alpine
     working_dir: /app
     command: sh -c "npm install && npm run dev -- --host"
+=======
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: ductri-frontend:latest
+>>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
     environment:
       VITE_API_URL: http://192.168.40.132:5000 
     volumes:
       - /home/adminit/task-manager/frontend:/app
     ports:
+<<<<<<< HEAD
       - "5173:5173" 
     networks:
       - ductri-network
     deploy:
       replicas: 1
+=======
+      - "80:80"
+    networks:
+      - ductri-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+    # Deploy section removed for local Docker Compose compatibility
+    # For Docker Swarm/Portainer, add back:
+    # deploy:
+    #   replicas: 1
+    #   restart_policy:
+    #     condition: on-failure
+    #     delay: 5s
+    #     max_attempts: 3
+    #   placement:
+    #     constraints:
+    #       - node.role == manager
+    #   update_config:
+    #     parallelism: 1
+    #     delay: 10s
+>>>>>>> 7a87fbb (Update project: consolidate docs, fix 500 errors, add Docker Swarm config)
 
 networks:
   ductri-network:
-    driver: overlay
-    attachable: true
+    driver: bridge
+    # For Docker Swarm, change driver to 'overlay' in Portainer
 
 volumes:
   postgres_data:
