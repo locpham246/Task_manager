@@ -33,7 +33,9 @@ const app = express();
 // CORS configuration - production domain by default
 const defaultOrigins = [
   'http://it.ductridn.com',  // Production domain
-  'https://it.ductridn.com'  // HTTPS production domain
+  'https://it.ductridn.com',  // HTTPS production domain
+  'http://localhost:5173',   // Local development (Vite default)
+  'http://127.0.0.1:5173'     // Local development (alternative)
 ];
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
@@ -44,24 +46,29 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    // Allow production domain
+    
+    // Always allow production domain
     if (origin.startsWith('http://it.ductridn.com') || origin.startsWith('https://it.ductridn.com')) {
       return callback(null, true);
     }
-    // Allow localhost only in development (can be enabled via ALLOWED_ORIGINS)
-    if (process.env.NODE_ENV === 'development' && (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1'))) {
+    
+    // Always allow localhost for local development
+    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       return callback(null, true);
     }
+    
     // Allow origins from environment variable
     if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else if (process.env.NODE_ENV !== 'production') {
-      // In development, allow all origins
-      callback(null, true);
-    } else {
-      // In production, check if origin is in allowed list
-      callback(new Error(`CORS: Origin ${origin} is not allowed`), false);
+      return callback(null, true);
     }
+    
+    // In development mode, allow all origins
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // In production, reject if not in allowed list
+    callback(new Error(`CORS: Origin ${origin} is not allowed`), false);
   },
   credentials: true,
   optionsSuccessStatus: 200,
@@ -84,17 +91,12 @@ app.use((req, res, next) => {
 });
 
 // Remove or adjust Cross-Origin-Opener-Policy to allow OAuth popups
-// These headers are set per-route to avoid conflicts with Google OAuth
+// Google OAuth requires unsafe-none COOP to allow popup communication
 app.use((req, res, next) => {
-  // Only set COOP/COEP for non-API routes to avoid OAuth issues
-  if (!req.path.startsWith('/api')) {
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
-  } else {
-    // For API routes, use unsafe-none to allow OAuth popups
-    res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
-    res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
-  }
+  // For all routes, use unsafe-none to allow OAuth popups
+  // This is required for Google OAuth to work properly
+  res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+  res.setHeader('Cross-Origin-Embedder-Policy', 'unsafe-none');
   next();
 });
 

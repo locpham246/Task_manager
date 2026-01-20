@@ -1,7 +1,26 @@
 import axios from 'axios';
 
-// Use environment variable or fallback to production API
-const API_URL = import.meta.env.VITE_API_URL || 'http://it.ductridn.com:5000/api';
+// Determine API URL based on environment
+// In production (via NPM): use relative path /api (no port, same origin)
+// In local dev: use http://localhost:5000/api
+// If VITE_API_URL is set, use it (for Docker builds)
+const getApiUrl = () => {
+  // If VITE_API_URL is explicitly set (from Docker env), use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // Check if we're on localhost (local development)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5000/api';
+  }
+  
+  // Production: use relative path (NPM will proxy /api to backend)
+  // This works because NPM forwards /api/* to backend service
+  return '/api';
+};
+
+const API_URL = getApiUrl();
 
 const api = axios.create({
     baseURL: API_URL,
